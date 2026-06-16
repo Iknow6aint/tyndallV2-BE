@@ -35,8 +35,23 @@ Swagger/OpenAPI docs are available at `http://localhost:3001/docs`.
 | `SEED_HQ_ADMIN_EMAIL` | Optional HQ account email created at startup |
 | `SEED_HQ_ADMIN_PASSWORD` | Optional HQ account password created at startup |
 | `SEED_HQ_ADMIN_NAME` | Optional HQ account display name |
+| `SEED_BRANCH_ID` | Optional seeded branch slug for branch-admin login |
+| `SEED_BRANCH_NAME` | Optional seeded branch display name |
+| `SEED_BRANCH_REGION` | Optional seeded branch region |
+| `SEED_BRANCH_ADMIN_EMAIL` | Optional seeded branch-admin email |
+| `SEED_BRANCH_ADMIN_PASSWORD` | Optional seeded branch-admin password |
+| `SEED_BRANCH_ADMIN_NAME` | Optional seeded branch-admin display name |
 | `IOT_DEFAULT_API_KEY` | Default device API key returned as `authorization` |
 | `IOT_TEMP_PRESET` | Temperature preset returned by `/api/getPreset` |
+
+## Local Auth Accounts
+
+The example environment seeds two active dashboard users for wiring the frontend:
+
+| Role | Email | Password | Landing route |
+| --- | --- | --- | --- |
+| HQ Super Admin | `admin@tyndallcarbonstandards.com` | `change-me` | `/overview` |
+| Branch Admin | `sarah.namutebi@tyndall.io` | `change-me` | `/kampala/overview` |
 
 ## Implemented Endpoints
 

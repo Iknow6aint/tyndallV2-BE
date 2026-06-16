@@ -2,7 +2,9 @@ import {
   ConflictException,
   Injectable,
   NotFoundException,
+  OnModuleInit,
 } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { slugify } from '../../common/utils/slugify';
@@ -13,12 +15,17 @@ import { BranchResponse } from './interfaces/branch-response.interface';
 import { Branch, BranchDocument } from './schemas/branch.schema';
 
 @Injectable()
-export class BranchesService {
+export class BranchesService implements OnModuleInit {
   constructor(
     @InjectModel(Branch.name)
     private readonly branchModel: Model<BranchDocument>,
     private readonly usersService: UsersService,
+    private readonly config: ConfigService,
   ) {}
+
+  async onModuleInit(): Promise<void> {
+    await this.seedBranchAdmin();
+  }
 
   async findAll(): Promise<BranchResponse[]> {
     const branches = await this.branchModel
@@ -111,6 +118,48 @@ export class BranchesService {
     }
 
     return slug;
+  }
+
+  private async seedBranchAdmin(): Promise<void> {
+    const email = this.config.get<string>('SEED_BRANCH_ADMIN_EMAIL');
+    const password = this.config.get<string>('SEED_BRANCH_ADMIN_PASSWORD');
+
+    if (!email || !password) return;
+
+    const name =
+      this.config.get<string>('SEED_BRANCH_ADMIN_NAME') ?? 'Sarah Namutebi';
+    const branchName =
+      this.config.get<string>('SEED_BRANCH_NAME') ?? 'Kampala Central';
+    const branchRegion =
+      this.config.get<string>('SEED_BRANCH_REGION') ?? 'East Africa';
+    const branchId =
+      slugify(this.config.get<string>('SEED_BRANCH_ID') ?? branchName) ||
+      'kampala';
+
+    const existing = await this.branchModel.findOne({ slug: branchId }).exec();
+
+    if (!existing) {
+      await this.branchModel.create({
+        slug: branchId,
+        name: branchName,
+        region: branchRegion,
+        admin: name,
+        adminEmail: email.toLowerCase().trim(),
+      });
+    } else {
+      existing.name = branchName;
+      existing.region = branchRegion;
+      existing.admin = name;
+      existing.adminEmail = email.toLowerCase().trim();
+      await existing.save();
+    }
+
+    await this.usersService.ensureActiveBranchAdmin({
+      name,
+      email,
+      password,
+      branchId,
+    });
   }
 
   private toResponse(branch: BranchDocument): BranchResponse {

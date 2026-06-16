@@ -52,6 +52,33 @@ export class UsersService implements OnModuleInit {
     });
   }
 
+  async ensureActiveUser(input: CreateUserInput): Promise<UserDocument> {
+    const email = input.email.toLowerCase().trim();
+    const existing = await this.userModel
+      .findOne({ email })
+      .select('+passwordHash')
+      .exec();
+
+    if (!existing) {
+      return this.create({
+        ...input,
+        email,
+        status: 'active',
+      });
+    }
+
+    existing.name = input.name.trim();
+    existing.role = input.role;
+    existing.branchId = input.branchId ?? null;
+    existing.status = 'active';
+
+    if (input.password) {
+      existing.passwordHash = await bcrypt.hash(input.password, 12);
+    }
+
+    return existing.save();
+  }
+
   async ensurePendingBranchAdmin(input: {
     name: string;
     email: string;
@@ -74,6 +101,22 @@ export class UsersService implements OnModuleInit {
       role: 'branch_admin',
       branchId: input.branchId,
       status: 'pending',
+    });
+  }
+
+  async ensureActiveBranchAdmin(input: {
+    name: string;
+    email: string;
+    branchId: string;
+    password: string;
+  }): Promise<UserDocument> {
+    return this.ensureActiveUser({
+      name: input.name,
+      email: input.email,
+      password: input.password,
+      role: 'branch_admin',
+      branchId: input.branchId,
+      status: 'active',
     });
   }
 
@@ -100,13 +143,7 @@ export class UsersService implements OnModuleInit {
 
     if (!email || !password) return;
 
-    const existing = await this.userModel
-      .findOne({ email: email.toLowerCase().trim() })
-      .exec();
-
-    if (existing) return;
-
-    await this.create({
+    await this.ensureActiveUser({
       name,
       email,
       password,
