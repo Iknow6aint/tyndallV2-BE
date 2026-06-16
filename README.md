@@ -8,6 +8,7 @@ This first slice implements:
 - Mongo-backed users.
 - Branch listing, creation, lookup, and update.
 - FE-compatible branch response contracts.
+- Hardware-facing IoT register and preset endpoints from the device documentation.
 
 ## Setup
 
@@ -19,6 +20,8 @@ npm run start:dev
 
 The API listens on `http://localhost:3001` by default, matching `tyndall-v2`.
 
+Swagger/OpenAPI docs are available at `http://localhost:3001/docs`.
+
 ## Environment
 
 | Key | Purpose |
@@ -28,11 +31,63 @@ The API listens on `http://localhost:3001` by default, matching `tyndall-v2`.
 | `JWT_SECRET` | JWT signing secret |
 | `JWT_EXPIRES_IN` | Token TTL, default `1d` |
 | `FRONTEND_ORIGIN` | CORS origin for the Next app |
+| `SWAGGER_PATH` | Swagger UI route, default `docs` |
 | `SEED_HQ_ADMIN_EMAIL` | Optional HQ account email created at startup |
 | `SEED_HQ_ADMIN_PASSWORD` | Optional HQ account password created at startup |
 | `SEED_HQ_ADMIN_NAME` | Optional HQ account display name |
+| `IOT_DEFAULT_API_KEY` | Default device API key returned as `authorization` |
+| `IOT_TEMP_PRESET` | Temperature preset returned by `/api/getPreset` |
 
 ## Implemented Endpoints
+
+### IoT Device Protocol
+
+These endpoints match the hardware documentation field names.
+
+```http
+POST /api/registerDevice
+```
+
+Body:
+
+```json
+{
+  "imei": "861234567890123"
+}
+```
+
+Response:
+
+```json
+{
+  "status": true,
+  "message": "Device registered successfully.",
+  "data": {
+    "authorization": "TYNKD-d91cc5cdb576610b337e5b41569ba411",
+    "imei": "861234567890123",
+    "deviceUID": "V1-1234567890-24080001"
+  }
+}
+```
+
+```http
+GET /api/getPreset?type=temp&imei=861234567890123&deviceUID=V1-1234567890-24080001
+x-api-key: TYNKD-d91cc5cdb576610b337e5b41569ba411
+```
+
+Response:
+
+```json
+{
+  "status": true,
+  "message": "Temp preset retrieved.",
+  "data": {
+    "preset": "30"
+  }
+}
+```
+
+The uploaded document’s `III. Upload data` section is blank, so the telemetry upload endpoint is intentionally not implemented yet.
 
 ### Auth
 
